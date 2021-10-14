@@ -1,0 +1,68 @@
+#
+# Copyright 2021 Bernd Pfrommer <bernd.pfrommer@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+endif()
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
+
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  message_generation
+  message_runtime
+  std_msgs
+  )
+
+# search for all msg files
+FILE(GLOB messages_to_build RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/msg_ros1"
+    "${CMAKE_CURRENT_SOURCE_DIR}/msg_ros1/*.msg")
+
+  MESSAGE(WARN,  "messages to build: ${messages_to_build}")
+  
+# notify catkin to look at the previously found msg files
+add_message_files(
+  FILES
+  ${messages_to_build}
+  DIRECTORY
+  msg_ros1
+  )
+
+# build the header files from the msg files, and notify catkin about the dependencies
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS})
+
+catkin_package(CATKIN_DEPENDS message_runtime std_msgs)
+
+add_executable(publisher_node src/publisher_node_ros1.cpp)
+target_link_libraries(publisher_node ${catkin_LIBRARIES})
+add_dependencies(publisher_node ${ros2_issues_EXPORTED_TARGETS})
+
+install(TARGETS publisher_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
