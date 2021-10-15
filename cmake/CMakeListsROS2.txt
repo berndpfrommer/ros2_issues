@@ -38,6 +38,7 @@ find_package(std_msgs REQUIRED)
 ament_auto_find_build_dependencies(REQUIRED rclcpp)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  msg/TestArrayColumnMajor.msg
   msg/TestArrayComplex.msg
   msg/TestArraySimple.msg
   msg/TestElement.msg
@@ -53,6 +54,13 @@ rosidl_target_interfaces(publisher_node
   ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 
+ament_auto_add_executable(subscriber_node
+  src/subscriber_node.cpp)
+
+rosidl_target_interfaces(subscriber_node
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+
 ament_auto_add_executable(publisher_node_complex
   src/publisher_node_complex.cpp)
 
@@ -62,6 +70,7 @@ rosidl_target_interfaces(publisher_node_complex
 install(TARGETS
   publisher_node
   publisher_node_complex
+  subscriber_node
   DESTINATION lib/${PROJECT_NAME}/)
 
 if(BUILD_TESTING)
