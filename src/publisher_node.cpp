@@ -13,14 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <unistd.h>
 
 #include <rclcpp/rclcpp.hpp>
 #include <ros2_issues/msg/test_array_column_major.hpp>
+#include <ros2_issues/msg/test_array_column_major2.hpp>
 #include <ros2_issues/msg/test_array_complex.hpp>
 #include <ros2_issues/msg/test_array_simple.hpp>
 #include <thread>
+#include <vector>
 
 template <class MsgType>
 struct TestPublisher : public rclcpp::Node
@@ -100,6 +101,64 @@ struct TestPublisherColumnMajor : public rclcpp::Node
   std::thread thread_;
 };
 
+template <class MsgType>
+struct TestPublisherColumnMajor2 : public rclcpp::Node
+{
+  struct Event
+  {
+    double ts;
+    uint16_t x;
+    uint16_t y;
+    bool polarity;
+  };
+  explicit TestPublisherColumnMajor2(const rclcpp::NodeOptions & options)
+  : Node("test_publisher", options)
+  {
+    pub_ = create_publisher<MsgType>(
+      "~/array", declare_parameter<int>("q_size", 1000));
+    thread_ = std::thread([this]() {
+      rclcpp::Rate rate(declare_parameter<int>("rate", 1000));
+      const int numElements = declare_parameter<int>("num_elements", 100);
+      rclcpp::Time t_start = now();
+      size_t msg_cnt(0);
+      MsgType msg;
+      const rclcpp::Duration logInterval = rclcpp::Duration::from_seconds(1.0);
+      while (rclcpp::ok()) {
+        // allocate driver data inside loop to simulate driver memory access
+        std::vector<Event> driverData(numElements);
+        msg.header.stamp = now();
+        msg.header.frame_id = "foo";
+        msg.x.resize(numElements);
+        msg.y.resize(numElements);
+        msg.ts.resize(numElements);
+        msg.polarity.resize(numElements);
+        // copy data from driver (row major) to message (column major)
+        for (int i = 0; i < numElements; i++) {
+          const auto & e = driverData[i];
+          msg.ts[i] =
+            (uint64_t)(e.ts * 1e3);  // driver gives t as float in usec
+          msg.x[i] = e.x;
+          msg.y[i] = e.y;
+          msg.polarity[i] = e.polarity;
+        }
+        pub_->publish(msg);
+        rate.sleep();
+        msg_cnt++;
+        rclcpp::Time t = now();
+        const rclcpp::Duration dt = t - t_start;
+        if (dt > logInterval) {
+          RCLCPP_INFO(get_logger(), "pub rate: %8.2f", msg_cnt / dt.seconds());
+          t_start = t;
+          msg_cnt = 0;
+        }
+      }
+    });
+  }
+  // -- variables
+  typename rclcpp::Publisher<MsgType>::SharedPtr pub_;
+  std::thread thread_;
+};
+
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
@@ -108,11 +167,15 @@ int main(int argc, char * argv[])
       std::make_shared<TestPublisher<ros2_issues::msg::TestArraySimple>>(
         rclcpp::NodeOptions());
     rclcpp::spin(node);
-  } 
-  else if ((argc > 1) && std::string(argv[1]) == "-c") {
-    auto node =
-      std::make_shared<TestPublisherColumnMajor<ros2_issues::msg::TestArrayColumnMajor>>(
-        rclcpp::NodeOptions());
+  } else if ((argc > 1) && std::string(argv[1]) == "-c") {
+    auto node = std::make_shared<
+      TestPublisherColumnMajor<ros2_issues::msg::TestArrayColumnMajor>>(
+      rclcpp::NodeOptions());
+    rclcpp::spin(node);
+  } else if ((argc > 1) && std::string(argv[1]) == "-2") {
+    auto node = std::make_shared<
+      TestPublisherColumnMajor2<ros2_issues::msg::TestArrayColumnMajor2>>(
+      rclcpp::NodeOptions());
     rclcpp::spin(node);
   } else {
     auto node =

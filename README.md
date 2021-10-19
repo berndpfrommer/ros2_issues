@@ -11,16 +11,21 @@ cd ~/ws/src
 git clone git@github.com:berndpfrommer/ros2_issues.git
 ```
 
-## How to run demo under ROS2
+## How to run demo under ROS2 using cyclone DDS
 Prepare:
 ```
 cd ~/ws
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
 . install/setup.bash
 ```
-Run publisher (here with cyclone dds) in one terminal:
+Point to cyclone config file:
 ```
-RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ros2 run ros2_issues publisher_node --ros-args -p num_elements:=5000 -p rate:=1000
+cd ~/ws/src/ros2_issues
+export CYCLONEDDS_URI=file://`pwd`/cyclone_dds_config.xml
+```
+Run publisher in one terminal (for standard message tests):
+```
+RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ros2 run ros2_issues publisher_node --ros-args -p num_elements:=50000 -p rate:=1000
 ```
 Parameters:
 - ``num_elements``: number of elements in the array
@@ -37,6 +42,11 @@ Check bandwidth and message size;
 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ros2 topic bw /test_publisher/array
 ```
 
+To test column-major messages with a more realistic scenario, run the publisher with ``-2`` argument:
+```
+RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ros2 run ros2_issues publisher_node -2 --ros-args -p num_elements:=50000 -p rate:=1000
+```
+
 ## How to run demo under ROS1
 Prepare:
 ```
@@ -47,7 +57,7 @@ catkin build
 ```
 Run publisher (here with cyclone dds) in one terminal:
 ```
-rosrun ros2_issues publisher_node _num_elements:=5000 _rate:=1000
+rosrun ros2_issues publisher_node _num_elements:=50000 _rate:=1000
 ```
 Parameters:
 - ``num_elements``: number of elements in the array

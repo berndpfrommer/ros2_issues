@@ -39,6 +39,7 @@ ament_auto_find_build_dependencies(REQUIRED rclcpp)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   msg/TestArrayColumnMajor.msg
+  msg/TestArrayColumnMajor2.msg
   msg/TestArrayComplex.msg
   msg/TestArraySimple.msg
   msg/TestElement.msg
