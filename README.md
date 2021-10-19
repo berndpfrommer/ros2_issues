@@ -21,7 +21,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
 Point to cyclone config file:
 ```
 cd ~/ws/src/ros2_issues
-export CYCLONEDDS_URI=file://`pwd`/cyclone_dds_config.xml
+export CYCLONEDDS_URI=file://`pwd`/cyclonedds_config.xml
 ```
 Run publisher in one terminal (for standard message tests):
 ```
